@@ -7,6 +7,7 @@ from dotenv import *
 from uuid import uuid4
 from icecream import ic
 from datetime import datetime
+from typing import Generator
 from time import time
 
 from src.utils.file import File
@@ -95,8 +96,10 @@ class Instagram:
         
         return results
 
+    def check(format: str) -> bool:
+        if format == 'image' or format == 'all': return 
 
-    def main(self, username: str):
+    def main(self, username: str, format: str):
 
         response = requests.get(url=f'https://www.instagram.com/api/v1/feed/user/{username}/username/?count=12', headers=self.__build_header(username=username))
         user_id = requests.get(url=self.__USER_ID_API+username, headers=self.__build_header(username=username))
@@ -104,11 +107,11 @@ class Instagram:
         user_id = user_id.json()['users'][0]['user']['pk_id']
         if response.status_code != 200: raise ExpiredExceptions('your COOKIES or IG CLAIM is Expired, Update Please!')
 
-        if not os.path.exists(f'{self.__PATH_TO_SAVE}/{username}'):
-            os.mkdir(f'{self.__PATH_TO_SAVE}/{username}')
-            os.mkdir(f'{self.__PATH_TO_SAVE}/{username}/{username}_images')
-            os.mkdir(f'{self.__PATH_TO_SAVE}/{username}/{username}_videos')
-            os.mkdir(f'{self.__PATH_TO_SAVE}/{username}/json')
+        # if not os.path.exists(f'{self.__PATH_TO_SAVE}/{username}'):
+        #     os.mkdir(f'{self.__PATH_TO_SAVE}/{username}')
+        #     os.mkdir(f'{self.__PATH_TO_SAVE}/{username}/{username}_images')
+        #     os.mkdir(f'{self.__PATH_TO_SAVE}/{username}/{username}_videos')
+        #     os.mkdir(f'{self.__PATH_TO_SAVE}/{username}/json')
 
         
         response = response.json()
@@ -138,29 +141,35 @@ class Instagram:
 
             for content in tqdm(contents, ascii=True, smoothing=0.1, total=len(contents)):
 
-                if content["medias"]["videos"]:
-                    self.__curl(
-                        url=content["medias"]["videos"][0]["url"],
-                        path=f"{self.__PATH_TO_SAVE}/{username}/{username}_videos/{str(round(time() * 1000))}.mp4"
-                        )
+                if bool(content["medias"]["videos"]) and (format == 'video' or format == 'all'):
+                    # self.__curl(
+                    #     url=content["medias"]["videos"][0]["url"],
+                    #     path=f"{self.__PATH_TO_SAVE}/{username}/{username}_videos/{str(round(time() * 1000))}.mp4"
+                    #     )
+
+                    yield content["medias"]["videos"][0]["url"]
 
                 if content["medias"]["carousel_media"] or content["medias"]["carousel_video"]:
 
-                    for medias in content["medias"]["carousel_media"]:
-                        max_resolution = max(medias, key=lambda x: x['width'] * x['height'] if x['width'] != x['height'] else 0)
+                    if format == 'image' or format == 'all': 
+                        for medias in content["medias"]["carousel_media"]:
+                            max_resolution = max(medias, key=lambda x: x['width'] * x['height'] if x['width'] != x['height'] else 0)
 
-                        self.__curl(
-                            url=max_resolution["url"],
-                            path=f"{self.__PATH_TO_SAVE}/{username}/{username}_images/{str(round(time() * 1000))}.jpg"
-                            )
+                            # self.__curl(
+                            #     url=max_resolution["url"],
+                            #     path=f"{self.__PATH_TO_SAVE}/{username}/{username}_images/{str(round(time() * 1000))}.jpg"
+                            #     )
+                            yield max_resolution["url"]
 
 
-                    for videos in content["medias"]["carousel_video"]:
-                        max_resolution = max(videos, key=lambda x: x['width'] * x['height'])
-                        self.__curl(
-                            url=max_resolution["url"],
-                            path=f"{self.__PATH_TO_SAVE}/{username}/{username}_videos/{str(round(time() * 1000))}.mp4"
-                            )
+                    if format == 'image' or format == 'all': 
+                        for videos in content["medias"]["carousel_video"]:
+                            max_resolution = max(videos, key=lambda x: x['width'] * x['height'])
+                            # self.__curl(
+                            #     url=max_resolution["url"],
+                            #     path=f"{self.__PATH_TO_SAVE}/{username}/{username}_videos/{str(round(time() * 1000))}.mp4"
+                            #     )
+                            yield max_resolution["url"]
                         
             
 
@@ -174,5 +183,5 @@ class Instagram:
             
 
 
-        self.__file.write_json(path=f'{self.__PATH_TO_SAVE}/{username}/json/{username}.json', content=results)
+        # self.__file.write_json(path=f'{self.__PATH_TO_SAVE}/{username}/json/{username}.json', content=results)
         
