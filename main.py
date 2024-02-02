@@ -9,105 +9,157 @@ from concurrent.futures import ThreadPoolExecutor, wait
 
 from dotenv import load_dotenv
 from src.services.instagram import Instagram
+from src.services.pinterest import Pinterest
 
 harvest = Instagram()
-executor = ThreadPoolExecutor()
+pinrys = Pinterest()
 
 load_dotenv()
 bot = TeleBot(os.getenv('BOT_TOKEN'))
 
-fiture = ['instagram', 'pinterest']
+fiture = ['instagram', 'pinterest', 'twiter']
 formats = ['image', 'video', 'all']
+totals = ['10', '50', '100', '250', 'custom']
 
 @bot.message_handler(commands=['start', 'hello'])
 def start(message: Message) -> None:
+
     ic(message.text)
     
-    markup = types.InlineKeyboardMarkup(row_width=5)
+    markup = types.InlineKeyboardMarkup(row_width=2)
     instagram = types.InlineKeyboardButton('Instagram', callback_data='instagram')
     pinterest = types.InlineKeyboardButton('pinterest', callback_data='pinterest')
+    twiter = types.InlineKeyboardButton('twiter', callback_data='twiter')
 
-    markup.add(instagram, pinterest)
+    markup.add(instagram, pinterest, twiter)
 
-    ic(type(message))
     bot.send_message(message.chat.id, 'choose social media', reply_markup=markup)
     ...
 
-@bot.callback_query_handler(func=lambda call: call.data in fiture)
-def answer(callback: CallbackQuery) -> None:
 
-    if callback.message:
+@bot.callback_query_handler(func=lambda call: True)
+def callback_handler(callback: CallbackQuery) -> None:
+    if callback.data in fiture:
 
-        ic('terpanggil')
-
-        global category
-        category = callback.data
+        global sessions
+        sessions = callback.data
 
         match callback.data:
             case 'instagram':
                 bot.delete_message(chat_id=callback.message.chat.id, message_id=callback.message.id)
+                bot.send_message(callback.message.chat.id, "Insert target Instagram username")
 
-                chat_id = callback.message.chat.id
-
-                bot.send_message(chat_id, "Insert target username: ")
-                @bot.message_handler(func=lambda message: message.chat.id == chat_id)
-                def handle(message):
-
-                    global username
-                    username = message.text
-
-                    bot.send_message(chat_id=message.chat.id,
-                                     text=message.text)
-                    
-                    format = types.InlineKeyboardMarkup(row_width=5)
-                    image = types.InlineKeyboardButton('image', callback_data='image')
-                    video = types.InlineKeyboardButton('video', callback_data='video')
-                    all = types.InlineKeyboardButton('all', callback_data='all')
-
-                    format.add(image, video, all)
-                    ic('memilih format')
-                    bot.send_message(message.chat.id, 'choose format', reply_markup=format)
-                    ic('hehe')
-                    
                 ...
 
             case 'pinterest':
+                global key_search
+                key_search = None
+                bot.delete_message(chat_id=callback.message.chat.id, message_id=callback.message.id)
+                bot.send_message(callback.message.chat.id, "what image do you want to search.?")
+    
+
+            case 'twiter':
                 bot.send_message(
                     chat_id=callback.message.chat.id,
-                    text=callback.data
+                    text='Sabar belum jadi bang hehe'
                 )
 
-            case 'pinterest':
-                bot.send_message(
-                    chat_id=callback.message.chat.id,
-                    text=callback.data
-                )
-                ...
+    elif callback.data in formats:
+        bot.delete_message(chat_id=callback.message.chat.id, message_id=callback.message.id)
+        for url in harvest.main(username=username, format=callback.data):
+            try: bot.send_photo(chat_id=callback.message.chat.id, photo=url)
+            except Exception: bot.send_video(chat_id=callback.message.chat.id, video=url)
+
+    
+    elif callback.data in totals:
+        bot.delete_message(chat_id=callback.message.chat.id, message_id=callback.message.id)
+
+        try:
+            for url in pinrys.main(name=key_search, size=int(callback.data)):
+                try: bot.send_photo(chat_id=callback.message.chat.id, photo=url)
+                except Exception: bot.send_video(chat_id=callback.message.chat.id, video=url) 
+        except Exception:
+            bot.send_message(callback.message.chat.id, "Insert count")
     ...
 
-def send(component: dict) -> None:
-    try: bot.send_photo(chat_id=component["callback"].message.chat.id, photo=component["url"])
-    except Exception: bot.send_video(chat_id=component["callback"].message.chat.id, video=component["url"]) 
+@bot.message_handler(func=lambda message: True)
+def message_handle(message: Message):
+    try:
 
-@bot.callback_query_handler(func=lambda call: call.data in formats)
-def hanlde_format(callback: CallbackQuery) -> None:
-    ic('masuk handle format')
-    if callback.message:
-        match category:
+        total = int(message.text)
+        ic(total)
+        ic(sessions)
+        match sessions:
             case 'instagram':
-                bot.delete_message(chat_id=callback.message.chat.id, message_id=callback.message.id)
+                ...
 
+            case 'pinterest':
+                global key_search
+                for url in pinrys.main(name=key_search, size=int(message.text)):
+                    try: bot.send_photo(chat_id=message.chat.id, photo=url)
+                    except Exception: bot.send_video(chat_id=message.chat.id, video=url)
 
-                task_executor = []
-                for url in harvest.main(username=username, format=callback.data):
-                    task_executor.append(executor.submit(send, {
-                        "callback": callback,
-                        "url": url
-                    }))
+    except Exception as err:
 
-                wait(task_executor)
+        ic(err)
+
+        global username
+        username = message.text
+
+        match sessions:
+            case 'instagram':
+                
+                format = types.InlineKeyboardMarkup(row_width=2)
+                image = types.InlineKeyboardButton('image', callback_data='image')
+                video = types.InlineKeyboardButton('video', callback_data='video')
+                all = types.InlineKeyboardButton('all', callback_data='all')
+
+                format.add(image, video, all)
+                bot.send_message(message.chat.id, 'choose format', reply_markup=format)
+
+            case 'pinterest':
+                key_search = message.text
+
+                total = types.InlineKeyboardMarkup(row_width=2)
+                ten = types.InlineKeyboardButton('10', callback_data='10')
+                fifty = types.InlineKeyboardButton('50', callback_data='50')
+                hundred = types.InlineKeyboardButton('100', callback_data='100')
+                maximal = types.InlineKeyboardButton('250', callback_data='250')
+                custom = types.InlineKeyboardButton('custom', callback_data='custom')
+
+                total.add(ten, fifty, hundred, maximal, custom)
+                bot.send_message(message.chat.id, 'input amount (250 max)', reply_markup=total)
 
         
-        ...
+
+
+# @bot.callback_query_handler(func=lambda call: call.data in totals)
+# def pinterest(callback: CallbackQuery) -> None:
+#     if callback.message:
+#         bot.delete_message(chat_id=callback.message.chat.id, message_id=callback.message.id)
+
+#         try:
+#             for url in pinrys.main(name=key_search, size=int(callback.data)):
+#                 try: bot.send_photo(chat_id=callback.message.chat.id, photo=url)
+#                 except Exception: bot.send_video(chat_id=callback.message.chat.id, video=url) 
+#         except Exception:
+#             bot.send_message(callback.message.chat.id, "Insert count")
+#             @bot.message_handler(func=lambda message: True)
+#             def handle(message):
+#                 for url in pinrys.main(name=key_search, size=int(message.text)):
+#                     try: bot.send_photo(chat_id=callback.message.chat.id, photo=url)
+#                     except Exception: bot.send_video(chat_id=callback.message.chat.id, video=url)                                 
+#     ...
+
+# @bot.callback_query_handler(func=lambda call: call.data in formats)
+# def instagram(callback: CallbackQuery) -> None:
+#     if callback.message:
+#         bot.delete_message(chat_id=callback.message.chat.id, message_id=callback.message.id)
+
+#         for url in harvest.main(username=username, format=callback.data):
+#             try: bot.send_photo(chat_id=callback.message.chat.id, photo=url)
+#             except Exception: bot.send_video(chat_id=callback.message.chat.id, video=url) 
+
+        # ...
 
 bot.infinity_polling()
