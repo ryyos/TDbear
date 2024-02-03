@@ -103,11 +103,27 @@ def message_handle(message: Message):
 
         ic(err)
 
-        global username
-        username = message.text
-
         match sessions:
             case 'instagram':
+                global username
+                username = message.text
+
+                ic(message.text)
+                ic(message.contact)
+                ic(message.id)
+                ic(message.date)
+                ic(message.message_id)
+                ic(message.story)
+                ic(message.chat.username)
+                ic(message.chat.id)
+                ic(message.chat.location)
+                ic(bot.get_chat(message.chat.id).bio)
+                ic(bot.get_chat(message.chat.id).description)
+                ic(bot.get_chat(message.chat.id).location)
+                ic(bot.get_chat(message.chat.id).photo)
+                ic(bot.get_chat(message.chat.id).title)
+                ic(bot.get_chat(message.chat.id).active_usernames)
+                ic(bot.get_chat(message.chat.id).profile_accent_color_id)
                 
                 format = types.InlineKeyboardMarkup(row_width=2)
                 image = types.InlineKeyboardButton('image', callback_data='image')
@@ -131,35 +147,4 @@ def message_handle(message: Message):
                 bot.send_message(message.chat.id, 'input amount (250 max)', reply_markup=total)
 
         
-
-
-# @bot.callback_query_handler(func=lambda call: call.data in totals)
-# def pinterest(callback: CallbackQuery) -> None:
-#     if callback.message:
-#         bot.delete_message(chat_id=callback.message.chat.id, message_id=callback.message.id)
-
-#         try:
-#             for url in pinrys.main(name=key_search, size=int(callback.data)):
-#                 try: bot.send_photo(chat_id=callback.message.chat.id, photo=url)
-#                 except Exception: bot.send_video(chat_id=callback.message.chat.id, video=url) 
-#         except Exception:
-#             bot.send_message(callback.message.chat.id, "Insert count")
-#             @bot.message_handler(func=lambda message: True)
-#             def handle(message):
-#                 for url in pinrys.main(name=key_search, size=int(message.text)):
-#                     try: bot.send_photo(chat_id=callback.message.chat.id, photo=url)
-#                     except Exception: bot.send_video(chat_id=callback.message.chat.id, video=url)                                 
-#     ...
-
-# @bot.callback_query_handler(func=lambda call: call.data in formats)
-# def instagram(callback: CallbackQuery) -> None:
-#     if callback.message:
-#         bot.delete_message(chat_id=callback.message.chat.id, message_id=callback.message.id)
-
-#         for url in harvest.main(username=username, format=callback.data):
-#             try: bot.send_photo(chat_id=callback.message.chat.id, photo=url)
-#             except Exception: bot.send_video(chat_id=callback.message.chat.id, video=url) 
-
-        # ...
-
 bot.infinity_polling()
