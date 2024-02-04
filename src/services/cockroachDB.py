@@ -45,7 +45,7 @@ class CokroachDB:
 
         match component["action"]:
 
-            case 'instagram' | 'pinterest':
+            case 'instagram' | 'pinterest' | 'license' | 'info' | 'start':
                 run_transaction(sessionmaker(bind=self.__engine),
                                 lambda s: self.post(
                                     session=s,

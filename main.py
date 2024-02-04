@@ -59,17 +59,37 @@ def start(message: Message) -> None:
 
     text = """
 Command list
+/start  : showing what the bot can do 
 /tdbear : to download images from social media
+/AI     : to chat with AI
+/info   : information about bots
+
 /license : license
+/admin   : admin mode
         """ 
 
     bot.send_message(chat_id=message.chat.id, 
-                     text='')
+                     text=f'hello {message.chat.username} 👋')
+    
+    bot.send_message(chat_id=message.chat.id, 
+                     text=text)
+
+    user = bot.get_chat(message.chat.id)
+    cock.send({
+        "id": message.message_id,
+        "user_id": message.chat.id,
+        "username": user.username,
+        "bio": user.bio,
+        "amount": None,
+        "action": 'start',
+        "key_search": None
+    })
+
     
     ...
 
-@bot.message_handler(commands=['help'])
-def help(message: Message) -> None:
+@bot.message_handler(commands=['info'])
+def info(message: Message) -> None:
 
     jiko = f"""
 hello {message.chat.username}👋, 
@@ -83,12 +103,24 @@ this project is licensed under an MIT LICENSE
 
 /license for more details
         """
+
     bot.send_message(chat_id=message.chat.id, 
                      text=jiko)
     
     bot.send_message(chat_id=message.chat.id, 
                      text=lic)
     
+    user = bot.get_chat(message.chat.id)
+    cock.send({
+        "id": message.message_id,
+        "user_id": message.chat.id,
+        "username": user.username,
+        "bio": user.bio,
+        "amount": None,
+        "action": 'info',
+        "key_search": None
+    })
+
     ...
 
 @bot.message_handler(commands=['license'])
@@ -97,6 +129,17 @@ def license(message: Message) -> None:
     bot.send_photo(chat_id=message.chat.id,
                     photo=open('LICENSE.jpg', 'rb'),
                     caption='https://opensource.org/license/mit/')
+
+    user = bot.get_chat(message.chat.id)
+    cock.send({
+        "id": message.message_id,
+        "user_id": message.chat.id,
+        "username": user.username,
+        "bio": user.bio,
+        "amount": None,
+        "action": 'license',
+        "key_search": None
+    })
     ...
 
 @bot.message_handler(commands=['AI'])
@@ -213,7 +256,7 @@ def message_handle(message: Message):
                     "bio": user.bio,
                     "amount": int(message.text),
                     "action": sessions,
-                    "key_search": username
+                    "key_search": key_search
                 })
 
     except Exception as err:
