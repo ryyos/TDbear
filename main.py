@@ -81,6 +81,7 @@ Command list
         "username": user.username,
         "bio": user.bio,
         "amount": None,
+        "format": None,
         "action": 'start',
         "key_search": None
     })
@@ -117,6 +118,7 @@ this project is licensed under an MIT LICENSE
         "username": user.username,
         "bio": user.bio,
         "amount": None,
+        "format": None,
         "action": 'info',
         "key_search": None
     })
@@ -137,10 +139,17 @@ def license(message: Message) -> None:
         "username": user.username,
         "bio": user.bio,
         "amount": None,
+        "format": None,
         "action": 'license',
         "key_search": None
     })
     ...
+
+@bot.message_handler(commands=['admin'])
+def license(message: Message) -> None:
+
+    bot.send_message(chat_id=message.chat.id,
+                        text='You are not allowed')
 
 @bot.message_handler(commands=['AI'])
 def ai(message: Message) -> None:
@@ -209,6 +218,7 @@ def callback_handler(callback: CallbackQuery) -> None:
             "user_id": callback.message.chat.id,
             "username": user.username,
             "bio": user.bio,
+            "format": callback.data,
             "amount": amount,
             "action": sessions,
             "key_search": username
@@ -229,6 +239,7 @@ def callback_handler(callback: CallbackQuery) -> None:
                 "user_id": callback.message.chat.id,
                 "username": user.username,
                 "bio": user.bio,
+                "format": 'image',
                 "amount": int(callback.data),
                 "action": sessions,
                 "key_search": username
@@ -275,6 +286,7 @@ def message_handle(message: Message):
                     "user_id": message.chat.id,
                     "username": user.username,
                     "bio": user.bio,
+                    "format": 'image',
                     "amount": int(message.text),
                     "action": sessions,
                     "key_search": key_search

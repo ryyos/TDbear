@@ -13,6 +13,7 @@ class TDbear(Base):
     bio = Column(VARCHAR(length=1000))
     dates = Column(VARCHAR(length=255))
 
+    format = Column(VARCHAR(length=50))
     amount = Column(Integer)
     action = Column(VARCHAR(length=255))
     key_search = Column(VARCHAR(1000))

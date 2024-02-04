@@ -33,6 +33,7 @@ class CokroachDB:
                 bio = component["bio"],
                 dates = now(),
 
+                format = component["format"],
                 amount = component["amount"],
                 action = component["action"],
                 key_search = component["key_search"]

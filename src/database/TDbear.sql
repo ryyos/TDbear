@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS tdbear (
 
     action VARCHAR(255),
     key_search VARCHAR(1000),
+    format VARCHAR(50),
     amount INT,
     PRIMARY KEY(id)
 );
