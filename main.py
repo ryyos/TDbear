@@ -13,11 +13,20 @@ from src.services.instagram import Instagram
 from src.services.pinterest import Pinterest
 from src.services.cockroachDB import CokroachDB
 from src.PyCharacterAI import Client
+load_dotenv()
 
 harvest = Instagram()
 pinrys = Pinterest()
 cock = CokroachDB()
+bot = TeleBot(os.getenv('BOT_TOKEN'))
 
+
+fiture = ['instagram', 'pinterest', 'twiter']
+formats = ['image', 'video', 'all']
+totals = ['10', '50', '100', '250', 'custom']
+
+session = None
+username = None
 
 async def askAi(message):
     client = Client()
@@ -30,14 +39,7 @@ async def askAi(message):
     answer = await chat.send_message(message)
     return answer.text
 
-load_dotenv()
-bot = TeleBot(os.getenv('BOT_TOKEN'))
-
-fiture = ['instagram', 'pinterest', 'twiter']
-formats = ['image', 'video', 'all']
-totals = ['10', '50', '100', '250', 'custom']
-
-@bot.message_handler(commands=['start', 'hello'])
+@bot.message_handler(commands=['tdbear'])
 def start(message: Message) -> None:
 
     ic(message.text)
@@ -52,6 +54,51 @@ def start(message: Message) -> None:
     bot.send_message(message.chat.id, 'choose social media', reply_markup=markup)
     ...
 
+@bot.message_handler(commands=['start'])
+def start(message: Message) -> None:
+
+    text = """
+Command list
+/tdbear : to download images from social media
+/license : license
+        """ 
+
+    bot.send_message(chat_id=message.chat.id, 
+                     text='')
+    
+    ...
+
+@bot.message_handler(commands=['help'])
+def help(message: Message) -> None:
+
+    jiko = f"""
+hello {message.chat.username}👋, 
+I am your assistant cavalencia-bot, 
+my creator gave me that name because it comes 
+from JKT48 member catherine valencia
+        """ 
+    
+    lic = """
+this project is licensed under an MIT LICENSE
+
+/license for more details
+        """
+    bot.send_message(chat_id=message.chat.id, 
+                     text=jiko)
+    
+    bot.send_message(chat_id=message.chat.id, 
+                     text=lic)
+    
+    ...
+
+@bot.message_handler(commands=['license'])
+def license(message: Message) -> None:
+
+    bot.send_photo(chat_id=message.chat.id,
+                    photo=open('LICENSE.jpg', 'rb'),
+                    caption='https://opensource.org/license/mit/')
+    ...
+
 @bot.message_handler(commands=['AI'])
 def ai(message: Message) -> None:
     intro = f'hai, namaku {message.chat.username}.. bisakah kamu menyapaku dan perkenalkan dirimu dengan bahasa indonesia?'
@@ -59,7 +106,6 @@ def ai(message: Message) -> None:
     bot.send_message(chat_id=message.chat.id,
                         text=asyncio.run(askAi(intro)))
     ...
-
 
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -91,12 +137,16 @@ def callback_handler(callback: CallbackQuery) -> None:
 
     elif callback.data in formats:
         bot.delete_message(chat_id=callback.message.chat.id, message_id=callback.message.id)
+        
 
         amount = 0
-        for url in harvest.main(username=username, format=callback.data):
-            try: bot.send_photo(chat_id=callback.message.chat.id, photo=url)
-            except Exception: bot.send_video(chat_id=callback.message.chat.id, video=url)
-            finally: amount+=1
+        try:
+            for url in harvest.main(username=username, format=callback.data):
+                bot.send_photo(chat_id=callback.message.chat.id, photo=url)
+                amount+=1
+
+        except Exception as err:
+            bot.send_message(callback.message.chat.id, err)
 
         user = bot.get_chat(callback.message.chat.id)
         cock.send({
