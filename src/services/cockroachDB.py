@@ -10,6 +10,7 @@ from sqlalchemy.orm.session import Session
 from sqlalchemy_cockroachdb import run_transaction
 
 from src.model.TDbear import TDbear
+from src.model.TDbearAi import TDbearAI
 from src.utils import now
 
 class CokroachDB:
@@ -41,6 +42,25 @@ class CokroachDB:
             ic(err)
         ...
 
+    def ai(self, session: Session, component: dict) -> None:
+
+        try:
+
+            session.add(TDbearAI(
+                id=component["id"],
+                user_id=component["user_id"],
+                username = component["username"],
+                bio = component["bio"],
+                dates = now(),
+
+                action = component["action"],
+                question = component["question"],
+                answer = component["answer"],
+            ))
+
+        except Exception as err:
+            ic(err)
+
     def send(self, component: dict) -> None:
 
         match component["action"]:
@@ -52,5 +72,12 @@ class CokroachDB:
                                     component=component
                                 ))
                 
+            case 'ai':
+                run_transaction(sessionmaker(bind=self.__engine),
+                                lambda s: self.ai(
+                                    session=s,
+                                    component=component
+                                ))
+
         
         ...

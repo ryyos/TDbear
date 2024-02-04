@@ -146,8 +146,20 @@ def license(message: Message) -> None:
 def ai(message: Message) -> None:
     intro = f'hai, namaku {message.chat.username}.. bisakah kamu menyapaku dan perkenalkan dirimu dengan bahasa indonesia?'
     ic(intro)
+    answer = asyncio.run(askAi(intro))
     bot.send_message(chat_id=message.chat.id,
-                        text=asyncio.run(askAi(intro)))
+                        text=answer)
+    
+    user = bot.get_chat(message.chat.id)
+    cock.send({
+        "id": message.message_id,
+        "user_id": message.chat.id,
+        "username": user.username,
+        "bio": user.bio,
+        "action": 'ai',
+        "question": None,
+        "answer": answer
+    })
     ...
 
 
@@ -156,8 +168,8 @@ def callback_handler(callback: CallbackQuery) -> None:
     if callback.data in fiture:
 
         global sessions
-        sessions = callback.data
 
+        sessions = callback.data
         match callback.data:
             case 'instagram':
                 bot.delete_message(chat_id=callback.message.chat.id, message_id=callback.message.id)
@@ -181,11 +193,11 @@ def callback_handler(callback: CallbackQuery) -> None:
     elif callback.data in formats:
         bot.delete_message(chat_id=callback.message.chat.id, message_id=callback.message.id)
         
-
         amount = 0
         try:
             for url in harvest.main(username=username, format=callback.data):
-                bot.send_photo(chat_id=callback.message.chat.id, photo=url)
+                if '#inifoto' in url: bot.send_photo(chat_id=callback.message.chat.id, photo=url.replace('#inifoto', ''))
+                else: bot.send_video(chat_id=callback.message.chat.id, video=url)
                 amount+=1
 
         except Exception as err:
@@ -230,14 +242,23 @@ def message_handle(message: Message):
     global username
 
     if message.text.startswith('$'):
+        answer = asyncio.run(askAi(message.text))
         bot.send_message(chat_id=message.chat.id,
-                         text=asyncio.run(askAi(message.text)))
-
+                         text=answer)
+                
+        user = bot.get_chat(message.chat.id)
+        cock.send({
+            "id": message.message_id,
+            "user_id": message.chat.id,
+            "username": user.username,
+            "bio": user.bio,
+            "action": 'ai',
+            "question": message.text,
+            "answer": answer
+        })
     try:
 
         total = int(message.text)
-        ic(total)
-        ic(sessions)
         match sessions:
             case 'instagram':
                 ...

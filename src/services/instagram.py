@@ -152,21 +152,12 @@ class Instagram:
                     if format == 'image' or format == 'all': 
                         for medias in content["medias"]["carousel_media"]:
                             max_resolution = max(medias, key=lambda x: x['width'] * x['height'] if x['width'] != x['height'] else 0)
-
-                            # self.__curl(
-                            #     url=max_resolution["url"],
-                            #     path=f"{self.__PATH_TO_SAVE}/{username}/{username}_images/{str(round(time() * 1000))}.jpg"
-                            #     )
-                            yield max_resolution["url"]
+                            yield max_resolution["url"]+'#inifoto'
 
 
-                    if format == 'image' or format == 'all': 
+                    if format == 'video' or format == 'all': 
                         for videos in content["medias"]["carousel_video"]:
                             max_resolution = max(videos, key=lambda x: x['width'] * x['height'])
-                            # self.__curl(
-                            #     url=max_resolution["url"],
-                            #     path=f"{self.__PATH_TO_SAVE}/{username}/{username}_videos/{str(round(time() * 1000))}.mp4"
-                            #     )
                             yield max_resolution["url"]
                         
             
