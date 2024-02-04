@@ -10,13 +10,11 @@ from datetime import datetime
 from typing import Generator
 from time import time
 
-from src.utils.file import File
 from src.exceptions.ExpiredExceptions import ExpiredExceptions
 
 class Instagram:
     def __init__(self) -> {}:
         load_dotenv()
-        self.__file = File()
 
         self.__COOKIES = os.getenv('COOKIES')
         self.__IG_CLAIM = os.getenv('IG_CLAIM')

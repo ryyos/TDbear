@@ -1,18 +1,34 @@
 import os
+import asyncio
 
 from time import sleep
 from icecream import ic
+from dotenv import load_dotenv
+
 from telebot import TeleBot
 from telebot import types
 from telebot.types import *
-from concurrent.futures import ThreadPoolExecutor, wait
 
-from dotenv import load_dotenv
 from src.services.instagram import Instagram
 from src.services.pinterest import Pinterest
+from src.services.cockroachDB import CokroachDB
+from src.PyCharacterAI import Client
 
 harvest = Instagram()
 pinrys = Pinterest()
+cock = CokroachDB()
+
+
+async def askAi(message):
+    client = Client()
+    await client.authenticate_with_token(os.getenv('AI_TOKEN'))
+
+    username = (await client.fetch_user())['user']['username']
+    print(f'Authenticated as {username}')
+    chat = await client.create_or_continue_chat(os.getenv('CHAR_ID'))
+
+    answer = await chat.send_message(message)
+    return answer.text
 
 load_dotenv()
 bot = TeleBot(os.getenv('BOT_TOKEN'))
@@ -35,6 +51,15 @@ def start(message: Message) -> None:
 
     bot.send_message(message.chat.id, 'choose social media', reply_markup=markup)
     ...
+
+@bot.message_handler(commands=['AI'])
+def ai(message: Message) -> None:
+    intro = f'hai, namaku {message.chat.username}.. bisakah kamu menyapaku dan perkenalkan dirimu dengan bahasa indonesia?'
+    ic(intro)
+    bot.send_message(chat_id=message.chat.id,
+                        text=asyncio.run(askAi(intro)))
+    ...
+
 
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -66,9 +91,23 @@ def callback_handler(callback: CallbackQuery) -> None:
 
     elif callback.data in formats:
         bot.delete_message(chat_id=callback.message.chat.id, message_id=callback.message.id)
+
+        amount = 0
         for url in harvest.main(username=username, format=callback.data):
             try: bot.send_photo(chat_id=callback.message.chat.id, photo=url)
             except Exception: bot.send_video(chat_id=callback.message.chat.id, video=url)
+            finally: amount+=1
+
+        user = bot.get_chat(callback.message.chat.id)
+        cock.send({
+            "id": callback.message.message_id,
+            "user_id": callback.message.chat.id,
+            "username": user.username,
+            "bio": user.bio,
+            "amount": amount,
+            "action": sessions,
+            "key_search": username
+        })
 
     
     elif callback.data in totals:
@@ -78,12 +117,29 @@ def callback_handler(callback: CallbackQuery) -> None:
             for url in pinrys.main(name=key_search, size=int(callback.data)):
                 try: bot.send_photo(chat_id=callback.message.chat.id, photo=url)
                 except Exception: bot.send_video(chat_id=callback.message.chat.id, video=url) 
+
+            user = bot.get_chat(callback.message.chat.id)
+            cock.send({
+                "id": callback.message.message_id,
+                "user_id": callback.message.chat.id,
+                "username": user.username,
+                "bio": user.bio,
+                "amount": int(callback.data),
+                "action": sessions,
+                "key_search": username
+            })
         except Exception:
             bot.send_message(callback.message.chat.id, "Insert count")
     ...
 
 @bot.message_handler(func=lambda message: True)
 def message_handle(message: Message):
+    global username
+
+    if message.text.startswith('$'):
+        bot.send_message(chat_id=message.chat.id,
+                         text=asyncio.run(askAi(message.text)))
+
     try:
 
         total = int(message.text)
@@ -99,31 +155,24 @@ def message_handle(message: Message):
                     try: bot.send_photo(chat_id=message.chat.id, photo=url)
                     except Exception: bot.send_video(chat_id=message.chat.id, video=url)
 
+                user = bot.get_chat(message.chat.id)
+                cock.send({
+                    "id": message.message_id,
+                    "user_id": message.chat.id,
+                    "username": user.username,
+                    "bio": user.bio,
+                    "amount": int(message.text),
+                    "action": sessions,
+                    "key_search": username
+                })
+
     except Exception as err:
 
         ic(err)
 
         match sessions:
             case 'instagram':
-                global username
                 username = message.text
-
-                ic(message.text)
-                ic(message.contact)
-                ic(message.id)
-                ic(message.date)
-                ic(message.message_id)
-                ic(message.story)
-                ic(message.chat.username)
-                ic(message.chat.id)
-                ic(message.chat.location)
-                ic(bot.get_chat(message.chat.id).bio)
-                ic(bot.get_chat(message.chat.id).description)
-                ic(bot.get_chat(message.chat.id).location)
-                ic(bot.get_chat(message.chat.id).photo)
-                ic(bot.get_chat(message.chat.id).title)
-                ic(bot.get_chat(message.chat.id).active_usernames)
-                ic(bot.get_chat(message.chat.id).profile_accent_color_id)
                 
                 format = types.InlineKeyboardMarkup(row_width=2)
                 image = types.InlineKeyboardButton('image', callback_data='image')
